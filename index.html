@@ -1,0 +1,88 @@
+import pandas as pd
+import time
+
+def get_aqi_data(url):
+    """下載並解析空氣品質資料"""
+    try:
+        # 環境部 API 的 CSV 格式編碼為 UTF-8
+        df = pd.read_csv(url, encoding='utf-8')
+        return df
+    except Exception as e:
+        print(f"❌ 無法連線網路或下載資料。錯誤訊息: {e}")
+        return None
+
+def query_aqi():
+    # 開放資料 API URL
+    url = 'https://data.moenv.gov.tw/api/v2/aqx_p_432?api_key=e75b1660-e564-4107-aad5-a8be1f905dd9&limit=1000&sort=ImportDate%20desc&format=CSV'
+
+    column_mapping = {
+        'sitename': '測站名稱',
+        'county': '縣市',
+        'aqi': '空氣品質指標(AQI)',
+        'pollutant': '主要污染物',
+        'status': '狀態',
+        'publishtime': '資料更新時間'
+    }
+
+    # 進入可重複執行的主互動迴圈
+    while True:
+        print("\n" + "="*50)
+        print("【台灣空氣品質即時查詢系統】")
+        print(" 1. 輸入縣市名稱進行查詢 (每次查詢皆會自動連網更新)")
+        print(" 2. 輸入 [q] 或 [quit] 結束程式")
+        print("="*50)
+
+        user_input = input("👉 請輸入欲查詢的縣市，或輸入 q 離開: ").strip()
+
+        # 檢查是否退出
+        if user_input.lower() in ['q', 'quit']:
+            print("👋 感謝使用，程式即將結束。")
+            time.sleep(1) # 稍微暫停讓使用者看見提示
+            break
+
+        if not user_input:
+            print("⚠️ 輸入不能為空，請重新輸入。")
+            continue
+
+        # 💡 重點優化：每次使用者輸入時，才即時連網下載最新的空氣品質資料
+        print("🔄 正在連線環境部取得最新空氣品質資料...")
+        df_all = get_aqi_data(url)
+
+        if df_all is None or df_all.empty:
+            print("❌ 未能成功取得網路資料，請確認網路是否連線，並重新嘗試。")
+            continue
+
+        # 檢查 API 欄位
+        available_cols = [col for col in column_mapping.keys() if col in df_all.columns]
+        if not available_cols:
+            print("❌ API 欄位異常，請檢查 API URL 是否失效。")
+            continue
+
+        df_clean = df_all[available_cols].copy()
+        df_clean['county'] = df_clean['county'].astype(str)
+
+        # 支援「台」與「臺」自動轉換模糊搜尋
+        search_keyword = user_input.replace('台', '[台臺]').replace('臺', '[台臺]')
+        filtered_df = df_clean[df_clean['county'].str.contains(search_keyword, case=False, na=False)]
+
+        if filtered_df.empty:
+            print(f"ℹ️ 找不到包含 '{user_input}' 的縣市資料，請重新輸入（例如：台北、高雄）。")
+            continue
+
+        # 重新命名欄位並重設索引
+        result_df = filtered_df.rename(columns=column_mapping).reset_index(drop=True)
+
+        print(f"\n🔍 篩選後的空氣品質資料（關鍵字: {user_input}）：")
+        print(result_df.to_string())
+
+        # 查詢完畢後提示，方便重複使用
+        print("\n💡 查詢完畢。您可以繼續輸入其他縣市進行下一次即時查詢。")
+
+if __name__ == "__main__":
+    try:
+        query_aqi()
+    except Exception as e:
+        print(f"\n💥 程式運作時發生嚴重錯誤: {e}")
+        print("請聯絡開發者或檢查網路連線。")
+        print("\n" + "="*50)
+        input("【防閃退提示】請按任意鍵退出... ")
