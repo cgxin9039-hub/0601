@@ -1,91 +1,49 @@
-body, html {
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    height: 100%;
-    overflow-x: hidden;
-    background-color: #050a10;
-    color: #e0e0e0;
-    font-family: "Microsoft JhengHei", sans-serif;
+const canvas = document.getElementById('starfield');
+const ctx = canvas.getContext('2d');
+
+let stars = [];
+
+function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resize);
+resize();
+
+// 初始化星星
+function init() {
+    stars = [];
+    for (let i = 0; i < 200; i++) {
+        stars.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            size: Math.random() * 3 + 1, // 讓星星大一點比較明顯
+            speed: Math.random() * 1 + 0.2
+        });
+    }
+}
+init();
+
+function animate() {
+    // 每一幀都刷成深藍色背景
+    ctx.fillStyle = '#050a10';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+ 
+
+    // 畫星星
+    ctx.fillStyle = '#ffffff';
+    stars.forEach(s => {
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+        ctx.fill();
+
+        s.y -= s.speed;
+        if (s.y < 0) s.y = canvas.height;
+    });
+
+    requestAnimationFrame(animate);
 }
 
-/* Canvas 背景置底 */
-#starfield {
-    position: fixed;
-    top: 0;
-    left: 0;
-    z-index: -1;
-}
-
-.container {
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 40px 20px;
-    text-align: center;
-}
-
-/* 標題特效 */
-.highlight {
-    color: #00f2fe;
-    text-shadow: 0 0 10px #00f2fe;
-}
-
-h1 {
-    font-size: 2.5rem;
-    letter-spacing: 2px;
-    margin-bottom: 10px;
-    background: linear-gradient(90deg, #fff, #00f2fe);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-
-/* 內容區塊 - 毛玻璃效果 */
-.content-box {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(0, 242, 254, 0.3);
-    padding: 30px;
-    border-radius: 15px;
-    backdrop-filter: blur(10px);
-    margin: 40px 0;
-    line-height: 1.8;
-    text-align: left;
-}
-
-.features {
-    display: flex;
-    justify-content: space-around;
-    margin-top: 20px;
-}
-
-.feature-item {
-    background: rgba(0, 242, 254, 0.1);
-    padding: 8px 15px;
-    border-radius: 5px;
-    border: 1px solid #00f2fe;
-    font-size: 0.9rem;
-}
-
-/* 按鈕設計 */
-.btn-download {
-    display: inline-block;
-    padding: 15px 40px;
-    font-size: 1.2rem;
-    color: #fff;
-    text-decoration: none;
-    background: linear-gradient(45deg, #00f2fe, #4facfe);
-    border-radius: 50px;
-    box-shadow: 0 0 20px rgba(0, 242, 254, 0.5);
-    transition: 0.3s;
-    font-weight: bold;
-}
-
-.btn-download:hover {
-    transform: scale(1.05);
-    box-shadow: 0 0 35px rgba(0, 242, 254, 0.8);
-}
-
-.note {
-    font-size: 0.8rem;
-    color: #888;
-    margin-top: 10px;
-}
+animate();
+console.log("Canvas 動畫已啟動！");
